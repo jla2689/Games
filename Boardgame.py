@@ -24,7 +24,7 @@ for url in all_url:
         board_games.append(url)
 
 
-# In[94]:
+# In[115]:
 
 board_games = list(set(board_games))
 #get the board game ID numbers
@@ -34,11 +34,12 @@ for b in board_games:
     digits = re.search('\d+', b)
     last_digit_index = re.search('\d+', b).end()
     name_of_game = b[last_digit_index + 1:]
-    board_games_and_nums.append([name_of_game, digits.group(0)])
+    name_of_game = name_of_game.replace('-', ' ')
+    board_games_and_nums.append([name_of_game.lower(), digits.group(0)])
     nums_only.append(digits.group(0))
 
 
-# In[99]:
+# In[107]:
 
 games = nums_only[:]
 dic ={}
@@ -50,13 +51,14 @@ while len(games)>0:
     soup = BeautifulSoup(urllib2.urlopen(urllib2.Request(final_url)).read())
     for num in games[:25]:
         name_of_game = soup.find('boardgame', {'objectid': num}).find('name', {'primary' : 'true'}).text
+        name_of_game = name_of_game.lower()
         des = soup.find('boardgame', {'objectid': num}).description.text
         dic[name_of_game] = {}
         dic[name_of_game]['description'] = des
     games = games[25:]
 
 
-# In[96]:
+# In[101]:
 
 #get the top 5 forums and put in list for later processing later. group everything in dictionary
 base_forum_list_url = 'https://www.boardgamegeek.com/xmlapi2/forumlist?id='
@@ -80,7 +82,12 @@ for number in board_games_and_nums:
         thread = BeautifulSoup(urllib2.urlopen(urllib2.Request(final_thread_url)).read())
         words_in_top_five_threads.append(thread.find('article').getText())
    
-    dic[num[0]]['user_reviews'] = words_in_top_five_threads
+    dic[number[0]]['user_reviews'] = words_in_top_five_threads
+
+
+# In[117]:
+
+dic['ticket to ride']
 
 
 # In[ ]:
