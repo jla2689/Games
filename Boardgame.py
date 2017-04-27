@@ -9,6 +9,25 @@ import pandas as pd
 import requests
 
 
+# In[157]:
+
+from HTMLParser import HTMLParser
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
+
+
 # In[39]:
 
 #find all the links given website and append to all_url list. From that list find all the links that end with /boardgame/somedigits
@@ -39,10 +58,11 @@ for b in board_games:
     nums_only.append(digits.group(0))
 
 
-# In[107]:
+# In[124]:
 
 games = nums_only[:]
 dic ={}
+bgn = []
 while len(games)>0:
     print len(games)
     s = ','.join(games[:25])
@@ -55,15 +75,16 @@ while len(games)>0:
         des = soup.find('boardgame', {'objectid': num}).description.text
         dic[name_of_game] = {}
         dic[name_of_game]['description'] = des
+        bgn.append([name_of_game, num])
     games = games[25:]
 
 
-# In[101]:
+# In[125]:
 
 #get the top 5 forums and put in list for later processing later. group everything in dictionary
 base_forum_list_url = 'https://www.boardgamegeek.com/xmlapi2/forumlist?id='
 base_forum_url = 'https://www.boardgamegeek.com/xmlapi2/forum?id='
-for number in board_games_and_nums:
+for number in bgn:
     print 'num', number[1]
     final_forum_list_url = base_forum_list_url + number[1] + '&type=thing'
     forum_list = BeautifulSoup(urllib2.urlopen(urllib2.Request(final_forum_list_url)).read())
@@ -85,12 +106,35 @@ for number in board_games_and_nums:
     dic[number[0]]['user_reviews'] = words_in_top_five_threads
 
 
-# In[117]:
+# In[133]:
 
-dic['ticket to ride']
-
-
-# In[ ]:
+#convert dictionary to dataframe
+df = pd.DataFrame.from_dict(dic)
 
 
+# In[178]:
+
+#function to remove html tags from text
+strip = lambda x: strip_tags(x)
+
+
+# In[192]:
+
+#join the list of reviews into one giant review
+for columns in df:
+    df.loc['user_reviews', columns] = ' '.join(df.loc['user_reviews', columns])
+
+
+# In[200]:
+
+#remove html tags from all rows and columns
+for columns in df:
+    df.loc['user_reviews', columns] = strip(df.loc['user_reviews', columns])
+    df.loc['description', columns] = strip(df.loc['description', columns])
+
+
+# In[203]:
+
+#convert df to csv
+dataframe = df.to_csv('board_game_data_frame', sep = ',', encoding = 'utf-8')
 
